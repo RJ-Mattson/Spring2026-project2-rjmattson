@@ -23,7 +23,9 @@ $(document).ready(function () {
 
     $("#timeBtn").click(function () {
         const now = new Date();
-        const formattedTime = now.toTimeString().slice(0, 5);
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const formattedTime = `${hours}:${minutes}`;
         $("#time").text(formattedTime).dialog("open");
     });
 
@@ -38,5 +40,52 @@ $(document).ready(function () {
 });
 
 function theSearch(lucky) {
-
+    let query = $("#query").val();
+    if (!query) return;
+    const url = `https://google.serper.dev/search?q=${encodeURIComponent(query)}&apiKey=${apiKey}`;
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (data) {
+            if (lucky && data.organic && data.organic.length > 0) {
+                window.location.href = data.organic[0].link;
+                return;
+            }
+            const resultsDiv = $("#searchResults");
+            resultsDiv.css("visibility", "visible").empty();
+            
+            if (data.knowledgeGraph) {
+                resultsDiv.append(`
+                    <div>Knowledge Graph</div>
+                    <div style="margin-bottom:20px; padding:10px; border:1px solid #555;">
+                        <strong>${data.knowledgeGraph.title || ''}</strong><br>
+                        <small>${data.knowledgeGraph.type || ''}</small>
+                        <p>${data.knowledgeGraph.description || ''}</p>
+                    </div>
+                `);
+            }
+            resultsDiv.append(`<div>Organic Results</div>`);
+            if (data.organic && data.organic.length > 0) {
+                data.organic.forEach(result => {
+                    resultsDiv.append(`
+                        <div class="result-item" style="margin-bottom:15px;">
+                            <a href="${result.link}" target="_blank" style="color: #4db8ff; font-size: 18px; text-decoration: none;">${result.title}</a>
+                            <p style="margin: 5px 0; color: #ccc;">${result.snippet}</p>
+                        </div>
+                    `);
+                });
+            }
+            if (data.peopleAlsoAsk && data.peopleAlsoAsk.length > 0) {
+                resultsDiv.append(`<div>People Also Ask</div>`);
+                data.peopleAlsoAsk.forEach(item => {
+                    resultsDiv.append(`<p style="color:#f39c12;">• ${item.question}</p>`);
+                });
+            }
+            if (data.relatedSearches && data.relatedSearches.length > 0) {
+                resultsDiv.append(`<div>Related Searches</div>`);
+                const relatedStrings = data.relatedSearches.map(r => r.query).join(", ");
+                resultsDiv.append(`<p style="font-style: italic; color: #bdc3c7;">${relatedStrings}</p>`);
+            }
+        }
+    });
 }
