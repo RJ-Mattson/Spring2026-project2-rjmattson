@@ -64,7 +64,7 @@ function theSearch(lucky) {
                     </div>
                 `);
             }
-            resultsDiv.append(`<div>Organic Results</div>`);
+            resultsDiv.append(`<div>Results</div>`);
             if (data.organic && data.organic.length > 0) {
                 data.organic.forEach(result => {
                     resultsDiv.append(`
